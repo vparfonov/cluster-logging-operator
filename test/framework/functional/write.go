@@ -12,14 +12,14 @@ import (
 )
 
 func (f *CollectorFunctionalFramework) WriteMessagesToNamespace(msg, namespace string, numOfLogs int) error {
-	filename := fmt.Sprintf("%s/%s_%s_%s/%s/0.log", fluentdLogPath[applicationLog], namespace, f.Pod.Name, f.Pod.UID, constants.CollectorName)
+	filename := fmt.Sprintf("%s/%s_%s_%s/%s/0.log", logPath[applicationLog], namespace, f.Pod.Name, f.Pod.UID, constants.CollectorName)
 	return f.WriteMessagesToLog(msg, numOfLogs, filename)
 }
 func (f *CollectorFunctionalFramework) WriteMessagesToApplicationLog(msg string, numOfLogs int) error {
 	return f.WriteMessagesToApplicationLogForContainer(msg, constants.CollectorName, numOfLogs)
 }
 func (f *CollectorFunctionalFramework) WriteMessagesToApplicationLogForContainer(msg, container string, numOfLogs int) error {
-	filename := fmt.Sprintf("%s/%s_%s_%s/%s/0.log", fluentdLogPath[applicationLog], f.Pod.Namespace, f.Pod.Name, f.Pod.UID, container)
+	filename := fmt.Sprintf("%s/%s_%s_%s/%s/0.log", logPath[applicationLog], f.Pod.Namespace, f.Pod.Name, f.Pod.UID, container)
 	return f.WriteMessagesToLog(msg, numOfLogs, filename)
 }
 
@@ -31,7 +31,7 @@ func (f *CollectorFunctionalFramework) WriteMessagesToInfraContainerLog(msg stri
 	if strings.HasPrefix(f.Namespace, "openshift-test") {
 		ns = f.Namespace
 	}
-	filename := fmt.Sprintf("%s/%s_%s_%s/%s/0.log", fluentdLogPath[applicationLog], ns, f.Pod.Name, f.Pod.UID, constants.CollectorName)
+	filename := fmt.Sprintf("%s/%s_%s_%s/%s/0.log", logPath[applicationLog], ns, f.Pod.Name, f.Pod.UID, constants.CollectorName)
 	return f.WriteMessagesToLog(msg, numOfLogs, filename)
 }
 
@@ -41,23 +41,23 @@ func (f *CollectorFunctionalFramework) WritesInfraContainerLogs(numOfLogs int) e
 }
 
 func (f *CollectorFunctionalFramework) WriteMessagesToAuditLog(msg string, numOfLogs int) error {
-	filename := fmt.Sprintf("%s/audit.log", fluentdLogPath[auditLog])
+	filename := fmt.Sprintf("%s/audit.log", logPath[auditLog])
 	return f.WriteMessagesToLog(msg, numOfLogs, filename)
 }
 
 func (f *CollectorFunctionalFramework) WriteAuditHostLog(numOfLogs int) error {
-	filename := fmt.Sprintf("%s/audit.log", fluentdLogPath[auditLog])
+	filename := fmt.Sprintf("%s/audit.log", logPath[auditLog])
 	msg := NewAuditHostLog(time.Now())
 	return f.WriteMessagesToLog(msg, numOfLogs, filename)
 }
 
 func (f *CollectorFunctionalFramework) WriteMessagesTok8sAuditLog(msg string, numOfLogs int) error {
-	filename := fmt.Sprintf("%s/audit.log", fluentdLogPath[k8sAuditLog])
+	filename := fmt.Sprintf("%s/audit.log", logPath[k8sAuditLog])
 	return f.WriteMessagesToLog(msg, numOfLogs, filename)
 }
 
 func (f *CollectorFunctionalFramework) WriteK8sAuditLog(numOfLogs int) error {
-	filename := fmt.Sprintf("%s/audit.log", fluentdLogPath[k8sAuditLog])
+	filename := fmt.Sprintf("%s/audit.log", logPath[k8sAuditLog])
 	for numOfLogs > 0 {
 		entry := NewKubeAuditLog(time.Now())
 		if err := f.WriteMessagesToLog(entry, 1, filename); err != nil {
@@ -69,7 +69,7 @@ func (f *CollectorFunctionalFramework) WriteK8sAuditLog(numOfLogs int) error {
 }
 
 func (f *CollectorFunctionalFramework) WriteOpenshiftAuditLog(numOfLogs int) error {
-	filename := fmt.Sprintf("%s/audit.log", fluentdLogPath[OpenshiftAuditLog])
+	filename := fmt.Sprintf("%s/audit.log", logPath[OpenshiftAuditLog])
 	for numOfLogs > 0 {
 		now := CRIOTime(time.Now())
 		entry := fmt.Sprintf(OpenShiftAuditLogTemplate, now, now)
@@ -82,22 +82,28 @@ func (f *CollectorFunctionalFramework) WriteOpenshiftAuditLog(numOfLogs int) err
 }
 
 func (f *CollectorFunctionalFramework) WriteMessagesToOpenshiftAuditLog(msg string, numOfLogs int) error {
-	filename := fmt.Sprintf("%s/audit.log", fluentdLogPath[OpenshiftAuditLog])
+	filename := fmt.Sprintf("%s/audit.log", logPath[OpenshiftAuditLog])
 	return f.WriteMessagesToLog(msg, numOfLogs, filename)
 }
+
 func (f *CollectorFunctionalFramework) WriteMessagesToOAuthAuditLog(msg string, numOfLogs int) error {
-	filename := fmt.Sprintf("%s/audit.log", fluentdLogPath[oauthAuditLog])
+	filename := fmt.Sprintf("%s/audit.log", logPath[oauthAuditLog])
+	return f.WriteMessagesToLog(msg, numOfLogs, filename)
+}
+
+func (f *CollectorFunctionalFramework) WriteMessagesToOAuthServerAuditLog(msg string, numOfLogs int) error {
+	filename := fmt.Sprintf("%s/audit.log", logPath[OAuthServerAuditLog])
 	return f.WriteMessagesToLog(msg, numOfLogs, filename)
 }
 
 func (f *CollectorFunctionalFramework) WriteMessagesToOVNAuditLog(msg string, numOfLogs int) error {
 
-	filename := fmt.Sprintf("%s/acl-audit-log.log", fluentdLogPath[ovnAuditLog])
+	filename := fmt.Sprintf("%s/acl-audit-log.log", logPath[ovnAuditLog])
 	return f.WriteMessagesToLog(msg, numOfLogs, filename)
 }
 
 func (f *CollectorFunctionalFramework) WriteOVNAuditLog(numOfLogs int) error {
-	filename := fmt.Sprintf("%s/acl-audit-log.log", fluentdLogPath[ovnAuditLog])
+	filename := fmt.Sprintf("%s/acl-audit-log.log", logPath[ovnAuditLog])
 	for numOfLogs > 0 {
 		entry := NewOVNAuditLog(time.Now())
 		if err := f.WriteMessagesToLog(entry, 1, filename); err != nil {
@@ -114,7 +120,7 @@ func (f *CollectorFunctionalFramework) WritesApplicationLogs(numOfLogs int) erro
 
 func (f *CollectorFunctionalFramework) WritesNApplicationLogsOfSize(numOfLogs, size int) error {
 	msg := "$(date -u +'%Y-%m-%dT%H:%M:%S.%N%:z') stdout F $msg "
-	file := fmt.Sprintf("%s/%s_%s_%s/%s/0.log", fluentdLogPath[applicationLog], f.Pod.Namespace, f.Pod.Name, f.Pod.UID, constants.CollectorName)
+	file := fmt.Sprintf("%s/%s_%s_%s/%s/0.log", logPath[applicationLog], f.Pod.Namespace, f.Pod.Name, f.Pod.UID, constants.CollectorName)
 	logPath := filepath.Dir(file)
 	log.V(3).Info("Writing message to app log with path", "path", logPath)
 	result, err := f.RunCommand(constants.CollectorName, "bash", "-c", fmt.Sprintf("bash -c 'mkdir -p %s;msg=$(cat /dev/urandom|tr -dc 'a-zA-Z0-9'|fold -w %d|head -n 1);for n in $(seq 1 %d);do echo %s >> %s; done'", logPath, size, numOfLogs, msg, file))
@@ -137,7 +143,7 @@ func (f *CollectorFunctionalFramework) WriteMessagesToLog(msg string, numOfLogs 
 // 'echo -e \xC0\xC1' Go always convert every undecodeable byte into '\ufffd'.
 // More details here: https://github.com/golang/go/issues/38006
 func (f *CollectorFunctionalFramework) WriteMessagesWithNotUTF8SymbolsToLog() error {
-	filename := fmt.Sprintf("%s/%s_%s_%s/%s/0.log", fluentdLogPath[applicationLog], f.Pod.Namespace, f.Pod.Name,
+	filename := fmt.Sprintf("%s/%s_%s_%s/%s/0.log", logPath[applicationLog], f.Pod.Namespace, f.Pod.Name,
 		f.Pod.UID, constants.CollectorName)
 	logPath := filepath.Dir(filename)
 	cmd := fmt.Sprintf("mkdir -p %s; echo -e \"$(echo '%s stdout F yC0yC1yF5yF6yF7yF8yF9yFAyFByFCyFDyFE' | sed -r 's/y/\\\\x/g')\"  >> %s;",

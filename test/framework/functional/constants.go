@@ -6,27 +6,29 @@ import (
 )
 
 const (
-	applicationLog     = "application"
-	auditLog           = "audit"
-	ovnAuditLog        = "ovn"
-	k8sAuditLog        = "k8s"
-	oauthAuditLog      = "oauth-audit-logs"
-	OpenshiftAuditLog  = "openshift-audit-logs"
-	ApplicationLogFile = "/tmp/app-logs"
-	FunctionalNodeName = "functional-test-node"
+	applicationLog      = "application"
+	auditLog            = "audit"
+	ovnAuditLog         = "ovn"
+	k8sAuditLog         = "k8s"
+	oauthAuditLog       = "oauth-audit-logs"
+	OpenshiftAuditLog   = "openshift-audit-logs"
+	OAuthServerAuditLog = "oauth-server"
+	ApplicationLogFile  = "/tmp/app-logs"
+	FunctionalNodeName  = "functional-test-node"
 )
 
 var (
 	maxDuration          time.Duration
 	defaultRetryInterval time.Duration
 
-	fluentdLogPath = map[string]string{
-		applicationLog:    "/var/log/pods",
-		auditLog:          "/var/log/audit",
-		ovnAuditLog:       "/var/log/ovn",
-		oauthAuditLog:     "/var/log/oauth-apiserver",
-		OpenshiftAuditLog: "/var/log/openshift-apiserver",
-		k8sAuditLog:       "/var/log/kube-apiserver",
+	logPath = map[string]string{
+		applicationLog:      "/var/log/pods",
+		auditLog:            "/var/log/audit",
+		ovnAuditLog:         "/var/log/ovn",
+		oauthAuditLog:       "/var/log/oauth-apiserver",
+		OpenshiftAuditLog:   "/var/log/openshift-apiserver",
+		k8sAuditLog:         "/var/log/kube-apiserver",
+		OAuthServerAuditLog: "/var/log/oauth-server",
 	}
 	outputLogFile = map[string]map[string]string{
 		logging.OutputTypeFluentdForward: {
