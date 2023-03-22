@@ -57,6 +57,10 @@ func ReconcileLokiStackLogStore(k8sClient client.Client, deletionTimestamp *v1.T
 }
 
 func RemoveRbac(k8sClient client.Client, removeFinalizer func(string) error) error {
+	if err := removeFinalizer(lokiStackFinalizer); err != nil {
+		return err
+	}
+
 	if err := reconcile.DeleteClusterRoleBinding(k8sClient, lokiStackAppReaderClusterRoleBindingName); err != nil {
 		return err
 	}
@@ -70,10 +74,6 @@ func RemoveRbac(k8sClient client.Client, removeFinalizer func(string) error) err
 	}
 
 	if err := reconcile.DeleteClusterRole(k8sClient, lokiStackWriterClusterRoleName); err != nil {
-		return err
-	}
-
-	if err := removeFinalizer(lokiStackFinalizer); err != nil {
 		return err
 	}
 
