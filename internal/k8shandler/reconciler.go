@@ -52,9 +52,6 @@ func Reconcile(cl *logging.ClusterLogging, requestClient client.Client, reader c
 
 	if instance.GetDeletionTimestamp() != nil {
 		// ClusterLogging is being deleted, remove resources that can not be garbage-collected.
-
-		log.V(0).Info("\n\n ClusterLogging is being deleted, remove resources that can not be garbage-collected.\n\n")
-
 		if err := lokistack.RemoveRbac(clusterLoggingRequest.Client, clusterLoggingRequest.removeFinalizer); err != nil {
 			log.Error(err, "Error removing RBAC for accessing LokiStack.")
 		}
