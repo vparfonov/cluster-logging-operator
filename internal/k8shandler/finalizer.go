@@ -2,6 +2,7 @@ package k8shandler
 
 import (
 	"github.com/ViaQ/logerr/v2/kverrors"
+	log "github.com/ViaQ/logerr/v2/log/static"
 )
 
 func (clusterRequest *ClusterLoggingRequest) appendFinalizer(identifier string) error {
@@ -26,6 +27,7 @@ func (clusterRequest *ClusterLoggingRequest) appendFinalizer(identifier string) 
 }
 
 func (clusterRequest *ClusterLoggingRequest) removeFinalizer(identifier string) error {
+	log.V(0).Info("\n\n removeFinalizer.\n\n")
 	instance, err := clusterRequest.getClusterLogging(true)
 	if err != nil {
 		return kverrors.Wrap(err, "Error getting ClusterLogging for removing finalizer.")
@@ -51,6 +53,6 @@ func (clusterRequest *ClusterLoggingRequest) removeFinalizer(identifier string) 
 	if err := clusterRequest.Update(instance); err != nil {
 		return kverrors.Wrap(err, "Failed to remove finalizer from ClusterLogging.")
 	}
-
+	log.V(0).Info("\n\n Failed to remove finalizer from ClusterLogging.\n\n")
 	return nil
 }
