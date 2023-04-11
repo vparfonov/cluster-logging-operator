@@ -80,8 +80,8 @@ func (clusterRequest *ClusterLoggingRequest) CreateOrUpdateCollection(extras map
 			log.V(9).Error(err, "Returning from unable to calculate MD5 hash")
 			return
 		}
-
-		if err := collector.ReconcileService(clusterRequest.EventRecorder, clusterRequest.Client, cluster.Namespace, constants.CollectorName, utils.AsOwner(cluster)); err != nil {
+		instance := clusterRequest.Cluster
+		if err := collector.ReconcileService(clusterRequest.EventRecorder, clusterRequest.Client, instance, constants.CollectorName, utils.AsOwner(cluster)); err != nil {
 			log.Error(err, "collector.ReconcileService")
 			return err
 		}
@@ -95,10 +95,9 @@ func (clusterRequest *ClusterLoggingRequest) CreateOrUpdateCollection(extras map
 			log.V(9).Error(err, "collector.ReconcilePrometheusRule")
 		}
 
-		instance := clusterRequest.Cluster
 		factory := collector.New(collectorConfHash, clusterRequest.ClusterID, *instance.Spec.Collection, clusterRequest.OutputSecrets, clusterRequest.ForwarderSpec)
 
-		if err = factory.ReconcileCollectorConfig(clusterRequest.EventRecorder, clusterRequest.Client, instance.Namespace, constants.CollectorName, collectorConfig, utils.AsOwner(instance)); err != nil {
+		if err = factory.ReconcileCollectorConfig(clusterRequest.EventRecorder, clusterRequest.Client, instance, constants.CollectorName, collectorConfig, utils.AsOwner(instance)); err != nil {
 			log.Error(err, "collector.ReconcileCollectorConfig")
 			return
 		}
@@ -108,7 +107,7 @@ func (clusterRequest *ClusterLoggingRequest) CreateOrUpdateCollection(extras map
 			return err
 		}
 
-		if err := factory.ReconcileDaemonset(clusterRequest.EventRecorder, clusterRequest.Client, instance.Namespace, constants.CollectorName, utils.AsOwner(instance)); err != nil {
+		if err := factory.ReconcileDaemonset(clusterRequest.EventRecorder, clusterRequest.Client, instance, constants.CollectorName, utils.AsOwner(instance)); err != nil {
 			log.Error(err, "collector.ReconcileDaemonset")
 			return err
 		}

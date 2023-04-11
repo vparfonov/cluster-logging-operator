@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/openshift/cluster-logging-operator/version"
 	"io/ioutil"
 	"math/rand"
 	"os"
@@ -498,4 +499,20 @@ func ToJsonLogs(logs []string) string {
 		return logs[0]
 	}
 	return fmt.Sprintf("[%s]", strings.Join(logs, ","))
+}
+
+func SetCommonLabels(object metav1.Object, instance *logging.ClusterLogging, component string) {
+	existed := object.GetLabels()
+	common := map[string]string{
+		constants.LabelK8sName:      instance.Kind,
+		constants.LabelK8sInstance:  instance.Name,
+		constants.LabelK8sComponent: component,
+		constants.LabelK8sPartOf:    constants.ClusterLogging,
+		constants.LabelK8sManagedBy: constants.ClusterLoggingOperator,
+		constants.LabelK8sVersion:   version.FullVersion,
+	}
+	for key, val := range existed {
+		common[key] = val
+	}
+	object.SetLabels(common)
 }

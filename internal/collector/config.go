@@ -14,11 +14,11 @@ import (
 )
 
 // ReconcileCollectorConfig reconciles a collector config specifically for the collector defined by the factory
-func (f *Factory) ReconcileCollectorConfig(er record.EventRecorder, k8sClient client.Client, namespace, name, collectorConfig string, owner metav1.OwnerReference) error {
+func (f *Factory) ReconcileCollectorConfig(er record.EventRecorder, k8sClient client.Client, instance *logging.ClusterLogging, name, collectorConfig string, owner metav1.OwnerReference) error {
 	log.V(3).Info("Updating ConfigMap and Secrets")
 	if f.CollectorType == logging.LogCollectionTypeFluentd {
 		collectorConfigMap := runtime.NewConfigMap(
-			namespace,
+			instance.Namespace,
 			name,
 			map[string]string{
 				"fluent.conf":         collectorConfig,
@@ -26,15 +26,18 @@ func (f *Factory) ReconcileCollectorConfig(er record.EventRecorder, k8sClient cl
 				"cleanInValidJson.rb": fluentd.CleanInValidJson,
 			},
 		)
+		utils.SetCommonLabels(collectorConfigMap, instance, constants.CollectorName)
 		utils.AddOwnerRefToObject(collectorConfigMap, owner)
 		return reconcile.Configmap(k8sClient, k8sClient, collectorConfigMap)
 	} else if f.CollectorType == logging.LogCollectionTypeVector {
 		secret := runtime.NewSecret(
-			namespace,
+			instance.Namespace,
 			constants.CollectorConfigSecretName,
 			map[string][]byte{
 				"vector.toml": []byte(collectorConfig),
 			})
+
+		utils.SetCommonLabels(secret, instance, constants.CollectorName)
 		utils.AddOwnerRefToObject(secret, owner)
 		return reconcile.Secret(er, k8sClient, secret)
 	}

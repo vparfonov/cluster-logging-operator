@@ -1,6 +1,7 @@
 package collector
 
 import (
+	logging "github.com/openshift/cluster-logging-operator/apis/logging/v1"
 	"github.com/openshift/cluster-logging-operator/internal/constants"
 	"github.com/openshift/cluster-logging-operator/internal/factory"
 	"github.com/openshift/cluster-logging-operator/internal/reconcile"
@@ -13,10 +14,10 @@ import (
 )
 
 // ReconcileService reconciles the service specifically for the collector that exposes the collector metrics
-func ReconcileService(er record.EventRecorder, k8sClient client.Client, namespace, name string, owner metav1.OwnerReference) error {
+func ReconcileService(er record.EventRecorder, k8sClient client.Client, instance *logging.ClusterLogging, name string, owner metav1.OwnerReference) error {
 	desired := factory.NewService(
 		constants.CollectorName,
-		namespace,
+		instance.Namespace,
 		constants.CollectorName,
 		[]v1.ServicePort{
 			{
@@ -37,5 +38,6 @@ func ReconcileService(er record.EventRecorder, k8sClient client.Client, namespac
 	}
 
 	utils.AddOwnerRefToObject(desired, owner)
+	utils.SetCommonLabels(desired, instance, "support")
 	return reconcile.Service(er, k8sClient, desired)
 }
