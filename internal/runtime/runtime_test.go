@@ -20,7 +20,7 @@ var _ = Describe("Object", func() {
 		var o Object
 		o = NewNamespace("foo")
 		Expect(ID(o)).To(Equal("/v1/namespaces/foo"))
-		o = NewDaemonSet("foo", "name")
+		o = NewDaemonSet("name", "foo", "component", corev1.PodSpec{})
 		Expect(ID(o)).To(Equal("apps/v1/namespaces/foo/daemonsets/name"))
 		o = &corev1.PodList{}
 		Expect(ID(o)).To(Equal("/v1, Kind=PodList"))

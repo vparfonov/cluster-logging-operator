@@ -87,7 +87,7 @@ func Labels(o runtime.Object) map[string]string {
 }
 
 // Initialize sets name, namespace and type metadata deduced from Go type.
-func Initialize(o runtime.Object, namespace, name string) {
+func Initialize(o runtime.Object, namespace, name string, visitors ...func(meta metav1.Object)) {
 	m := Meta(o)
 	m.SetNamespace(namespace)
 	m.SetName(name)
@@ -96,6 +96,9 @@ func Initialize(o runtime.Object, namespace, name string) {
 		"pod-security.kubernetes.io/enforce":             "privileged",
 		"security.openshift.io/scc.podSecurityLabelSync": "false",
 	})
+	for _, visitor := range visitors {
+		visitor(m)
+	}
 }
 
 // ServiceDomainName returns "name.namespace.svc".

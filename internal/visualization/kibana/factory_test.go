@@ -510,7 +510,7 @@ func TestNewKibanaCR(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(got.Spec.Tolerations, test.want.Spec.Tolerations) {
-				t.Errorf("Tolerations: got\n%v\n\nwant\n%v", got.Spec.Tolerations, test.want.Spec.Tolerations)
+				t.Errorf("Tolerances: got\n%v\n\nwant\n%v", got.Spec.Tolerations, test.want.Spec.Tolerations)
 			}
 		})
 	}

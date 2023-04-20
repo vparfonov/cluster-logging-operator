@@ -1,4 +1,4 @@
-package factory
+package runtime
 
 import (
 	"reflect"
@@ -10,7 +10,7 @@ import (
 func TestNewDaemonsetDoesNotDefineMinReadySeconds(t *testing.T) {
 
 	podspec := core.PodSpec{}
-	daemonSet := NewDaemonSet("thenname", "thenamespace", "thecomponent", "thecomponent", podspec)
+	daemonSet := NewDaemonSet("thenname", "thenamespace", "thecomponent", podspec)
 
 	if daemonSet.Spec.MinReadySeconds != 0 {
 		t.Errorf("Exp. the MinReadySeconds to be the default but was %d", daemonSet.Spec.MinReadySeconds)
@@ -19,7 +19,7 @@ func TestNewDaemonsetDoesNotDefineMinReadySeconds(t *testing.T) {
 func TestNewDaemonsetSetsAllLabelsToBeTheSame(t *testing.T) {
 
 	podspec := core.PodSpec{}
-	daemonSet := NewDaemonSet("thenname", "thenamespace", "thecomponent", "thecomponent", podspec)
+	daemonSet := NewDaemonSet("thenname", "thenamespace", "thecomponent", podspec)
 
 	expLabels := daemonSet.ObjectMeta.Labels
 	if !reflect.DeepEqual(expLabels, daemonSet.Spec.Selector.MatchLabels) {
@@ -32,7 +32,7 @@ func TestNewDaemonsetSetsAllLabelsToBeTheSame(t *testing.T) {
 func TestNewDaemonsetIncludesCriticalPodAnnotation(t *testing.T) {
 
 	podspec := core.PodSpec{}
-	daemonSet := NewDaemonSet("thenname", "thenamespace", "thecomponent", "thecomponent", podspec)
+	daemonSet := NewDaemonSet("thenname", "thenamespace", "thecomponent", podspec)
 
 	if _, ok := daemonSet.Spec.Template.ObjectMeta.Annotations["scheduler.alpha.kubernetes.io/critical-pod"]; !ok {
 		t.Error("Exp. the daemonset to define the critical pod annotation but it did not")

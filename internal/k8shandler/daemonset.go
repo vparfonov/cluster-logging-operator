@@ -2,7 +2,7 @@ package k8shandler
 
 import (
 	"fmt"
-	"github.com/openshift/cluster-logging-operator/internal/factory"
+	"github.com/openshift/cluster-logging-operator/internal/runtime"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 
@@ -12,8 +12,8 @@ import (
 )
 
 // NewDaemonSet stubs an instance of a daemonset
-func NewDaemonSet(daemonsetName, namespace, loggingComponent, component string, podSpec core.PodSpec) *apps.DaemonSet {
-	return factory.NewDaemonSet(daemonsetName, namespace, loggingComponent, component, podSpec)
+func NewDaemonSet(daemonsetName, namespace, component string, podSpec core.PodSpec) *apps.DaemonSet {
+	return runtime.NewDaemonSet(daemonsetName, namespace, component, podSpec)
 }
 
 // GetDaemonSetList lists DS in namespace with given selector
@@ -39,7 +39,6 @@ func (clusterRequest *ClusterLoggingRequest) RemoveDaemonset(daemonsetName strin
 	daemonset := NewDaemonSet(
 		daemonsetName,
 		clusterRequest.Cluster.Namespace,
-		daemonsetName,
 		daemonsetName,
 		core.PodSpec{},
 	)

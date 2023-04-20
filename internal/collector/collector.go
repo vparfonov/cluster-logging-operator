@@ -1,6 +1,8 @@
 package collector
 
 import (
+	"github.com/openshift/cluster-logging-operator/internal/runtime"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"path"
 	"strings"
 
@@ -16,7 +18,6 @@ import (
 	vector "github.com/openshift/cluster-logging-operator/internal/collector/vector"
 	"github.com/openshift/cluster-logging-operator/internal/constants"
 	"github.com/openshift/cluster-logging-operator/internal/factory"
-	coreFactory "github.com/openshift/cluster-logging-operator/internal/factory"
 	"github.com/openshift/cluster-logging-operator/internal/utils"
 )
 
@@ -66,17 +67,19 @@ var (
 )
 
 type Visitor func(collector *v1.Container, podSpec *v1.PodSpec)
+type CommonLabelVisitor func(meta metav1.Object)
 
 type Factory struct {
-	ConfigHash    string
-	CollectorSpec logging.CollectionSpec
-	CollectorType logging.LogCollectionType
-	ClusterID     string
-	ImageName     string
-	TrustedCAHash string
-	Visit         Visitor
-	Secrets       map[string]*v1.Secret
-	ForwarderSpec logging.ClusterLogForwarderSpec
+	ConfigHash             string
+	CollectorSpec          logging.CollectionSpec
+	CollectorType          logging.LogCollectionType
+	ClusterID              string
+	ImageName              string
+	TrustedCAHash          string
+	Visit                  Visitor
+	Secrets                map[string]*v1.Secret
+	ForwarderSpec          logging.ClusterLogForwarderSpec
+	CommonLabelInitializer CommonLabelVisitor
 }
 
 // CollectorResourceRequirements returns the resource requirements for a given collector implementation
@@ -100,11 +103,11 @@ func (f *Factory) CollectorResourceRequirements() v1.ResourceRequirements {
 func (f *Factory) NodeSelector() map[string]string {
 	return f.CollectorSpec.CollectorSpec.NodeSelector
 }
-func (f *Factory) Tolerations() []v1.Toleration {
+func (f *Factory) Tolerances() []v1.Toleration {
 	return f.CollectorSpec.CollectorSpec.Tolerations
 }
 
-func New(confHash, clusterID string, collectorSpec logging.CollectionSpec, secrets map[string]*v1.Secret, forwarderSpec logging.ClusterLogForwarderSpec) *Factory {
+func New(confHash, clusterID string, collectorSpec logging.CollectionSpec, secrets map[string]*v1.Secret, forwarderSpec logging.ClusterLogForwarderSpec, instanceName string) *Factory {
 	factory := &Factory{
 		ClusterID:     clusterID,
 		ConfigHash:    confHash,
@@ -114,6 +117,9 @@ func New(confHash, clusterID string, collectorSpec logging.CollectionSpec, secre
 		Visit:         fluentd.CollectorVisitor,
 		Secrets:       secrets,
 		ForwarderSpec: forwarderSpec,
+		CommonLabelInitializer: func(meta metav1.Object) {
+			utils.SetCommonLabels(meta, utils.GetCollectorName(collectorSpec.Type), instanceName)
+		},
 	}
 	if collectorSpec.Type == logging.LogCollectionTypeVector {
 		factory.ImageName = constants.VectorName
@@ -122,9 +128,9 @@ func New(confHash, clusterID string, collectorSpec logging.CollectionSpec, secre
 	return factory
 }
 
-func (f *Factory) NewDaemonSet(namespace, name string, trustedCABundle *v1.ConfigMap, tlsProfileSpec configv1.TLSProfileSpec) *apps.DaemonSet {
+func (f *Factory) NewCollectorDaemonSet(namespace, name string, trustedCABundle *v1.ConfigMap, tlsProfileSpec configv1.TLSProfileSpec) *apps.DaemonSet {
 	podSpec := f.NewPodSpec(trustedCABundle, f.ForwarderSpec, f.ClusterID, f.TrustedCAHash, tlsProfileSpec)
-	ds := coreFactory.NewDaemonSet(name, namespace, constants.CollectorName, constants.CollectorName, *podSpec)
+	ds := runtime.NewDaemonSet(name, namespace, constants.CollectorName, *podSpec, f.CommonLabelInitializer)
 	return ds
 }
 
@@ -150,7 +156,7 @@ func (f *Factory) NewPodSpec(trustedCABundle *v1.ConfigMap, forwarderSpec loggin
 			{Name: tmpVolumeName, VolumeSource: v1.VolumeSource{EmptyDir: &v1.EmptyDirVolumeSource{Medium: v1.StorageMediumMemory}}},
 		},
 	}
-	podSpec.Tolerations = append(podSpec.Tolerations, f.Tolerations()...)
+	podSpec.Tolerations = append(podSpec.Tolerations, f.Tolerances()...)
 
 	secretNames := AddSecretVolumes(podSpec, forwarderSpec)
 

@@ -501,18 +501,31 @@ func ToJsonLogs(logs []string) string {
 	return fmt.Sprintf("[%s]", strings.Join(logs, ","))
 }
 
-func SetCommonLabels(object metav1.Object, instance *logging.ClusterLogging, component string) {
-	existed := object.GetLabels()
+func SetCommonLabels(object metav1.Object, collectorType, instanceName string) {
 	common := map[string]string{
-		constants.LabelK8sName:      instance.Kind,
-		constants.LabelK8sInstance:  instance.Name,
-		constants.LabelK8sComponent: component,
+		constants.LabelK8sName:      collectorType,
+		constants.LabelK8sInstance:  instanceName,
+		constants.LabelK8sComponent: constants.CollectorName,
 		constants.LabelK8sPartOf:    constants.ClusterLogging,
 		constants.LabelK8sManagedBy: constants.ClusterLoggingOperator,
 		constants.LabelK8sVersion:   version.FullVersion,
 	}
+	AddLabels(object, common)
+}
+
+func AddLabels(object metav1.Object, labels map[string]string) {
+	existed := object.GetLabels()
 	for key, val := range existed {
-		common[key] = val
+		labels[key] = val
 	}
-	object.SetLabels(common)
+	object.SetLabels(labels)
+}
+
+func GetCollectorName(collectorType logging.LogCollectionType) string {
+	if collectorType == logging.LogCollectionTypeFluentd {
+		return constants.FluentdName
+	} else if collectorType == logging.LogCollectionTypeVector {
+		return constants.VectorName
+	}
+	return "unknown"
 }

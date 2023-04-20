@@ -81,7 +81,7 @@ func (clusterRequest *ClusterLoggingRequest) CreateOrUpdateCollection(extras map
 			return
 		}
 		instance := clusterRequest.Cluster
-		if err := collector.ReconcileService(clusterRequest.EventRecorder, clusterRequest.Client, instance, constants.CollectorName, utils.AsOwner(cluster)); err != nil {
+		if err := collector.ReconcileService(clusterRequest.EventRecorder, clusterRequest.Client, cluster.Namespace, constants.CollectorName, utils.AsOwner(cluster)); err != nil {
 			log.Error(err, "collector.ReconcileService")
 			return err
 		}
@@ -95,9 +95,9 @@ func (clusterRequest *ClusterLoggingRequest) CreateOrUpdateCollection(extras map
 			log.V(9).Error(err, "collector.ReconcilePrometheusRule")
 		}
 
-		factory := collector.New(collectorConfHash, clusterRequest.ClusterID, *instance.Spec.Collection, clusterRequest.OutputSecrets, clusterRequest.ForwarderSpec)
+		factory := collector.New(collectorConfHash, clusterRequest.ClusterID, *instance.Spec.Collection, clusterRequest.OutputSecrets, clusterRequest.ForwarderSpec, instance.Name)
 
-		if err = factory.ReconcileCollectorConfig(clusterRequest.EventRecorder, clusterRequest.Client, instance, constants.CollectorName, collectorConfig, utils.AsOwner(instance)); err != nil {
+		if err = factory.ReconcileCollectorConfig(clusterRequest.EventRecorder, clusterRequest.Client, instance.Namespace, constants.CollectorName, collectorConfig, utils.AsOwner(instance)); err != nil {
 			log.Error(err, "collector.ReconcileCollectorConfig")
 			return
 		}
@@ -107,7 +107,7 @@ func (clusterRequest *ClusterLoggingRequest) CreateOrUpdateCollection(extras map
 			return err
 		}
 
-		if err := factory.ReconcileDaemonset(clusterRequest.EventRecorder, clusterRequest.Client, instance, constants.CollectorName, utils.AsOwner(instance)); err != nil {
+		if err := factory.ReconcileDaemonset(clusterRequest.EventRecorder, clusterRequest.Client, instance.Namespace, constants.CollectorName, utils.AsOwner(instance)); err != nil {
 			log.Error(err, "collector.ReconcileDaemonset")
 			return err
 		}
@@ -151,7 +151,7 @@ func (clusterRequest *ClusterLoggingRequest) removeCollector(name string) (err e
 
 		// https://issues.redhat.com/browse/LOG-3233  Assume if the DS doesn't exist
 		// everything is removed
-		ds := runtime.NewDaemonSet(clusterRequest.Cluster.Namespace, name)
+		ds := runtime.NewDaemonSet(name, clusterRequest.Cluster.Namespace, name, corev1.PodSpec{})
 		key := client.ObjectKeyFromObject(ds)
 		if err := clusterRequest.Client.Get(context.TODO(), key, ds); err != nil {
 			if errors.IsNotFound(err) {
