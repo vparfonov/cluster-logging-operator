@@ -13,6 +13,8 @@ import (
 	"github.com/openshift/cluster-logging-operator/internal/generator/vector/output/kafka"
 	"github.com/openshift/cluster-logging-operator/internal/generator/vector/output/loki"
 	"github.com/openshift/cluster-logging-operator/internal/generator/vector/output/splunk"
+	"github.com/openshift/cluster-logging-operator/internal/generator/vector/output/syslog"
+	"github.com/openshift/cluster-logging-operator/internal/logstore/lokistack"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -44,12 +46,12 @@ func Outputs(clspec *logging.CollectionSpec, secrets map[string]*corev1.Secret, 
 			}
 		}
 
-		if op.Has(constants.PreviewTLSSecurityProfile) {
+		if op.Has(constants.PreviewTLSSecurityProfile) || lokistack.DefaultLokiOuputNames.Has(o.Name) {
 			if o.Name == logging.OutputNameDefault && o.Type == logging.OutputTypeElasticsearch {
 				op[generator.MinTLSVersion] = ""
 				op[generator.Ciphers] = ""
 			} else {
-				outMinTlsVersion, outCiphers := op.TLSProfileInfo(clfspec.TLSSecurityProfile, o)
+				outMinTlsVersion, outCiphers := op.TLSProfileInfo(clfspec.TLSSecurityProfile, o, ",")
 				op[generator.MinTLSVersion] = outMinTlsVersion
 				op[generator.Ciphers] = outCiphers
 			}
@@ -71,10 +73,12 @@ func Outputs(clspec *logging.CollectionSpec, secrets map[string]*corev1.Secret, 
 			outputs = generator.MergeElements(outputs, splunk.Conf(o, inputs, secret, op))
 		case logging.OutputTypeHttp:
 			outputs = generator.MergeElements(outputs, http.Conf(o, inputs, secret, op))
+		case logging.OutputTypeSyslog:
+			outputs = generator.MergeElements(outputs, syslog.Conf(o, inputs, secret, op))
 		}
 	}
 
-	minTlsVersion, cipherSuites := op.TLSProfileInfo(nil, logging.OutputSpec{})
+	minTlsVersion, cipherSuites := op.TLSProfileInfo(nil, logging.OutputSpec{}, ",")
 	outputs = append(outputs,
 		AddNodeNameToMetric(AddNodenameToMetricTransformName, []string{InternalMetricsSourceName}),
 		PrometheusOutput(PrometheusOutputSinkName, []string{AddNodenameToMetricTransformName}, minTlsVersion, cipherSuites))

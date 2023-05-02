@@ -838,6 +838,7 @@ spec:
                 properties:
                   kibana:
                     description: Specification of the Kibana Visualization component
+                    nullable: true
                     properties:
                       nodeSelector:
                         additionalProperties:
@@ -951,8 +952,6 @@ spec:
                               type: string
                           type: object
                         type: array
-                    required:
-                    - replicas
                     type: object
                   ocpConsole:
                     description: OCPConsole is the specification for the OCP console

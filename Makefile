@@ -43,17 +43,14 @@ export CURRENT_BRANCH=$(shell git rev-parse --abbrev-ref HEAD;)
 export IMAGE_TAG?=127.0.0.1:5000/openshift/origin-$(OPERATOR_NAME):$(CURRENT_BRANCH)
 BUNDLE_TAG=$(error set OVERLAY to deploy or run a bundle)
 
-export LOGGING_VERSION?=5.7
+export LOGGING_VERSION?=5.8
 export VERSION=$(LOGGING_VERSION).0
 export NAMESPACE?=openshift-logging
 
 IMAGE_LOGGING_FLUENTD?=quay.io/openshift-logging/fluentd:1.14.6
 IMAGE_LOGGING_VECTOR?=quay.io/openshift-logging/vector:0.21-rh
 IMAGE_LOGFILEMETRICEXPORTER?=quay.io/openshift-logging/log-file-metric-exporter:1.1
-# Note: use logging-view-plugin:latest to pick up improvements in the console automatically.
-# Unlike the other components, console changes do not risk breaking the collector,
-# the console depends only on the format of the LokiStore records.
-IMAGE_LOGGING_CONSOLE_PLUGIN?=quay.io/openshift-logging/logging-view-plugin:latest
+IMAGE_LOGGING_CONSOLE_PLUGIN?=quay.io/openshift-logging/logging-view-plugin:$(LOGGING_VERSION)
 endif # ifdef OVERLAY
 
 REPLICAS?=0
@@ -264,6 +261,7 @@ test-functional-vector:
 		./test/functional/outputs/loki/... \
 		./test/functional/outputs/http/... \
 		./test/functional/normalization \
+		./test/functional/outputs/syslog/... \
 		-ginkgo.noColor -timeout=40m -ginkgo.slowSpecThreshold=45.0
 
 .PHONY: test-forwarder-generator
@@ -292,7 +290,7 @@ coverage: test-unit
 test-cluster:
 	go test  -cover -race ./test/... -- -root=$(CURDIR)
 
-OPENSHIFT_VERSIONS?="v4.11-v4.14"
+OPENSHIFT_VERSIONS?="v4.12-v4.16"
 # Generate bundle manifests and metadata, then validate generated files.
 BUNDLE_VERSION?=$(VERSION)
 CHANNEL=$(or $(filename $(OVERLAY)),stable)

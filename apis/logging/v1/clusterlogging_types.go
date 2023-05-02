@@ -105,8 +105,9 @@ type VisualizationSpec struct {
 	// Specification of the Kibana Visualization component
 	//
 	// +deprecated
+	// +nullable
 	// +optional
-	KibanaSpec `json:"kibana,omitempty"`
+	Kibana *KibanaSpec `json:"kibana,omitempty"`
 
 	// OCPConsole is the specification for the OCP console plugin
 	//
@@ -131,8 +132,9 @@ type KibanaSpec struct {
 	Tolerations  []v1.Toleration   `json:"tolerations,omitempty"`
 
 	// Number of instances to deploy for a Kibana deployment
+	// +optional
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Kibana Size",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:podCount"}
-	Replicas *int32 `json:"replicas"`
+	Replicas *int32 `json:"replicas,omitempty"`
 
 	// Specification of the Kibana Proxy component
 	ProxySpec `json:"proxy,omitempty"`

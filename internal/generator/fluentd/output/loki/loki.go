@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"strings"
 
+	logging "github.com/openshift/cluster-logging-operator/apis/logging/v1"
 	"github.com/openshift/cluster-logging-operator/internal/constants"
 	"github.com/openshift/cluster-logging-operator/internal/generator/fluentd/helpers"
+	"github.com/openshift/cluster-logging-operator/internal/generator/fluentd/normalize"
 	"github.com/openshift/cluster-logging-operator/internal/generator/fluentd/output"
 	"github.com/openshift/cluster-logging-operator/internal/generator/fluentd/output/security"
-
-	logging "github.com/openshift/cluster-logging-operator/apis/logging/v1"
 	urlhelper "github.com/openshift/cluster-logging-operator/internal/generator/url"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -40,6 +40,8 @@ var (
 type Loki struct {
 	StoreID        string
 	Tenant         Element
+	TLSMinVersion  string
+	CipherSuites   string
 	URLBase        string
 	LokiLabel      []string
 	SecurityConfig []Element
@@ -56,6 +58,12 @@ func (l Loki) Template() string {
 @id {{.StoreID}}
 line_format json
 url {{.URLBase}}
+{{if (ne .TLSMinVersion "") -}}
+min_version {{.TLSMinVersion}}
+{{end -}}
+{{if (ne .CipherSuites "") -}}
+ciphers {{.CipherSuites}}
+{{end -}}
 {{kv .Tenant -}}
 {{compose .SecurityConfig}}
 <label>
@@ -67,11 +75,24 @@ url {{.URLBase}}
 {{end}}`
 }
 
+func (l *Loki) setTLSProfileFromOptions(op Options) {
+	if version, found := op[MinTLSVersion]; found {
+		opVersion := version.(string)
+		if minVersion := helpers.TLSMinVersion(opVersion); minVersion != "" {
+			l.TLSMinVersion = minVersion
+		}
+	}
+	if ciphers, found := op[Ciphers]; found {
+		l.CipherSuites = ciphers.(string)
+	}
+}
+
 func Conf(bufspec *logging.FluentdBufferSpec, secret *corev1.Secret, o logging.OutputSpec, op Options) []Element {
 	return []Element{
 		FromLabel{
 			InLabel: helpers.LabelName(o.Name),
 			SubElements: []Element{
+				normalize.DedotLabels(),
 				LokiLabelFilter(o.Loki),
 				Output(bufspec, secret, o, op),
 			},
@@ -87,16 +108,18 @@ func Output(bufspec *logging.FluentdBufferSpec, secret *corev1.Secret, o logging
 	u, _ := urlhelper.Parse(o.URL)
 	urlBase := fmt.Sprintf("%v://%v%v", u.Scheme, u.Host, u.Path)
 	storeID := helpers.StoreID("", o.Name, "")
+	loki := Loki{
+		StoreID:        strings.ToLower(helpers.Replacer.Replace(o.Name)),
+		URLBase:        urlBase,
+		Tenant:         Tenant(o.Loki),
+		LokiLabel:      LokiLabel(o.Loki),
+		SecurityConfig: SecurityConfig(o, secret),
+		BufferConfig:   output.Buffer(output.NOKEYS, bufspec, storeID, &o),
+	}
+	loki.setTLSProfileFromOptions(op)
 	return Match{
-		MatchTags: "**",
-		MatchElement: Loki{
-			StoreID:        strings.ToLower(helpers.Replacer.Replace(o.Name)),
-			URLBase:        urlBase,
-			Tenant:         Tenant(o.Loki),
-			LokiLabel:      LokiLabel(o.Loki),
-			SecurityConfig: SecurityConfig(o, secret),
-			BufferConfig:   output.Buffer(output.NOKEYS, bufspec, storeID, &o),
-		},
+		MatchTags:    "**",
+		MatchElement: loki,
 	}
 }
 

@@ -11,6 +11,7 @@ import (
 	. "github.com/openshift/cluster-logging-operator/internal/generator"
 	. "github.com/openshift/cluster-logging-operator/internal/generator/fluentd/elements"
 	"github.com/openshift/cluster-logging-operator/internal/generator/fluentd/helpers"
+	"github.com/openshift/cluster-logging-operator/internal/generator/fluentd/normalize"
 	"github.com/openshift/cluster-logging-operator/internal/generator/fluentd/output"
 	"github.com/openshift/cluster-logging-operator/internal/generator/fluentd/output/security"
 	genhelper "github.com/openshift/cluster-logging-operator/internal/generator/helpers"
@@ -57,6 +58,7 @@ func Conf(bufspec *logging.FluentdBufferSpec, secret *corev1.Secret, o logging.O
 		FromLabel{
 			InLabel: helpers.LabelName(o.Name),
 			SubElements: []Element{
+				normalize.DedotLabels(),
 				Output(bufspec, secret, o, op),
 			},
 		},
@@ -67,6 +69,7 @@ func Output(bufspec *logging.FluentdBufferSpec, secret *corev1.Secret, o logging
 	if genhelper.IsDebugOutput(op) {
 		return genhelper.DebugOutput
 	}
+
 	topics := Topics(o)
 	storeID := helpers.StoreID("", o.Name, "")
 	return Match{
@@ -162,7 +165,16 @@ func SecurityConfig(o logging.OutputSpec, secret *corev1.Secret) []Element {
 		}
 		// Try the preferred and deprecated names.
 		_, ok := security.TryKeys(secret, constants.SASLEnable, constants.DeprecatedSaslOverSSL)
-		conf = append(conf, SaslOverSSL(ok))
+		sasl := SASL{
+			SaslOverSSL: ok,
+		}
+		if security.HasPassphrase(secret) {
+			sasl.SaslKeyPassword = security.SecretPath(o.Secret.Name, constants.Passphrase)
+		}
+		if scramMechanism := security.GetFromSecret(secret, constants.SASLMechanisms); scramMechanism != "" {
+			sasl.ScramMechanism = scramMechanism
+		}
+		conf = append(conf, sasl)
 	}
 	return conf
 }
