@@ -2,6 +2,9 @@ package forwarding
 
 import (
 	"context"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"strings"
 	"time"
 
@@ -147,8 +150,26 @@ func (r *ReconcileForwarder) updateStatus(instance *logging.ClusterLogForwarder)
 // SetupWithManager sets up the controller with the Manager.
 func (r *ReconcileForwarder) SetupWithManager(mgr ctrl.Manager) error {
 	controllerBuilder := ctrl.NewControllerManagedBy(mgr).
-		Watches(&source.Kind{Type: &logging.ClusterLogForwarder{}}, &handler.EnqueueRequestForObject{})
+		Watches(&source.Kind{Type: &logging.ClusterLogForwarder{}}, &handler.EnqueueRequestForObject{},
+			builder.WithPredicates(predicate.Funcs{CreateFunc: func(createEvent event.CreateEvent) bool {
+				log.Info("========= " + createEvent.Object.GetName())
+				if createEvent.Object.GetName() == constants.SingletonName {
+					o := createEvent.Object
+					status := &logging.ClusterLogForwarderStatus{}
+					status.Conditions.SetCondition(clusterlogforwarder.CondInvalid("invalid clf spec; one or more errors present: %v",
+						"bad name"))
+					clf := o.(*logging.ClusterLogForwarder)
+					clf.Status = *status
+					mgr.GetClient().Status().Update(context.TODO(), clf)
+					b, _ := clf.Status.Conditions.MarshalJSON()
+					log.Info("status " + string(b))
+					return false
+				}
+				return true
+			}}))
+	predicate := predicate.GenerationChangedPredicate{}
 	return controllerBuilder.
 		For(&logging.ClusterLogForwarder{}).
+		WithEventFilter(predicate).
 		Complete(r)
 }
