@@ -16,21 +16,15 @@ import (
 )
 
 const (
-	FluentdDashboardFile = "dashboards/fluentd/openshift-logging-dashboard.json"
-	VectorDashboardFile  = "dashboards/vector/openshift-logging-dashboard.json"
-	DashboardName        = "grafana-dashboard-cluster-logging"
-	DashboardNS          = "openshift-config-managed"
-	DashboardFileName    = "openshift-logging.json"
-	DashboardHashName    = "contentHash"
+	CollectorDashboardFile = "dashboards/collector/openshift-logging-dashboard.json"
+	DashboardName          = "grafana-dashboard-cluster-logging"
+	DashboardNS            = "openshift-config-managed"
+	DashboardFileName      = "openshift-logging.json"
+	DashboardHashName      = "contentHash"
 )
 
-func newDashboardConfigMap(collectionType logging.LogCollectionType) *corev1.ConfigMap {
-	var spec string
-	if collectionType == logging.LogCollectionTypeFluentd {
-		spec = string(utils.GetFileContents(path.Join(utils.GetShareDir(), FluentdDashboardFile)))
-	} else if collectionType == logging.LogCollectionTypeVector {
-		spec = string(utils.GetFileContents(path.Join(utils.GetShareDir(), VectorDashboardFile)))
-	}
+func newDashboardConfigMap() *corev1.ConfigMap {
+	var spec = string(utils.GetFileContents(path.Join(utils.GetShareDir(), CollectorDashboardFile)))
 	hash, err := utils.CalculateMD5Hash(spec)
 	if err != nil {
 		log.Error(err, "Error calculated hash for metrics dashboard")
@@ -49,11 +43,7 @@ func newDashboardConfigMap(collectionType logging.LogCollectionType) *corev1.Con
 }
 
 func ReconcileDashboards(writer client.Writer, reader client.Reader, collection *logging.CollectionSpec) (err error) {
-	collectionType := logging.LogCollectionTypeFluentd
-	if collection != nil {
-		collectionType = collection.Type
-	}
-	cm := newDashboardConfigMap(collectionType)
+	cm := newDashboardConfigMap()
 	if err := reconcile.Configmap(writer, reader, cm, configmaps.CompareLabels); err != nil {
 		return err
 	}

@@ -12,14 +12,14 @@ import (
 
 var _ = Describe("ReconcileDashboards", func() {
 	var (
-		fakeClient     client.Client
-		collectionType = logging.LogCollectionTypeFluentd
+		fakeClient client.Client
+		//collectionType = logging.LogCollectionTypeFluentd
 		collectionSpec = &logging.CollectionSpec{
 			Type: logging.LogCollectionTypeFluentd,
 		}
 
 		GetDashboard = func() *corev1.ConfigMap {
-			key := client.ObjectKeyFromObject(newDashboardConfigMap(collectionType))
+			key := client.ObjectKeyFromObject(newDashboardConfigMap())
 			actual := &corev1.ConfigMap{}
 			Expect(fakeClient.Get(context.TODO(), key, actual)).To(Succeed(), "Exp the configmap to exist")
 			actual.ResourceVersion = ""
@@ -31,13 +31,13 @@ var _ = Describe("ReconcileDashboards", func() {
 				fakeClient = fake.NewClientBuilder().WithObjects(cm).Build()
 			}
 		}
-		exp     = newDashboardConfigMap(collectionType)
+		exp     = newDashboardConfigMap()
 		initial *corev1.ConfigMap
 	)
 
 	BeforeEach(func() {
 		fakeClient = fake.NewClientBuilder().Build()
-		initial = newDashboardConfigMap(collectionType)
+		initial = newDashboardConfigMap()
 	})
 
 	Context("when the configmap does not exist", func() {
@@ -53,7 +53,7 @@ var _ = Describe("ReconcileDashboards", func() {
 	Context("when the configmap does exist", func() {
 
 		It("should update the configmap when the dashboard is different", func() {
-			initial := newDashboardConfigMap(collectionType)
+			initial := newDashboardConfigMap()
 			initial.Labels[DashboardHashName] = "abc"
 			setup(initial)
 			Expect(ReconcileDashboards(fakeClient, fakeClient, collectionSpec)).To(Succeed())
