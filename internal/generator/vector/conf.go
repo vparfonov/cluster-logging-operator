@@ -7,10 +7,10 @@ import (
 )
 
 //nolint:govet // using declarative style
-func Conf(clspec *logging.CollectionSpec, secrets map[string]*corev1.Secret, clfspec *logging.ClusterLogForwarderSpec, namespace string, op generator.Options) []generator.Section {
+func Conf(clspec *logging.CollectionSpec, secrets map[string]*corev1.Secret, clfspec *logging.ClusterLogForwarderSpec, namespace, clfName string, op generator.Options) []generator.Section {
 	return []generator.Section{
 		{
-			Sources(clfspec, namespace, op),
+			Sources(clfspec, namespace, clfName, op),
 			`
 			Set of all input sources, as defined in CLF spec
 			 - kubernetes_logs

@@ -25,14 +25,14 @@ const (
 	OvnAuditLogs    = "ovn_audit_logs"
 )
 
-func Sources(spec *logging.ClusterLogForwarderSpec, namespace string, op generator.Options) []generator.Element {
+func Sources(spec *logging.ClusterLogForwarderSpec, namespace, clfName string, op generator.Options) []generator.Element {
 	return generator.MergeElements(
-		LogSources(spec, namespace, op),
+		LogSources(spec, namespace, clfName, op),
 		MetricsSources(InternalMetricsSourceName),
 	)
 }
 
-func LogSources(spec *logging.ClusterLogForwarderSpec, namespace string, op generator.Options) []generator.Element {
+func LogSources(spec *logging.ClusterLogForwarderSpec, namespace, clfName string, op generator.Options) []generator.Element {
 	var el []generator.Element = make([]generator.Element, 0)
 	types := generator.GatherSources(spec, op)
 	if types.Has(logging.InputNameApplication) || types.Has(logging.InputNameInfrastructure) {
@@ -40,7 +40,7 @@ func LogSources(spec *logging.ClusterLogForwarderSpec, namespace string, op gene
 			source.KubernetesLogs{
 				ComponentID:  "raw_container_logs",
 				Desc:         "Logs from containers (including openshift containers)",
-				ExcludePaths: ExcludeContainerPaths(namespace),
+				ExcludePaths: ExcludeContainerPaths(namespace, clfName),
 			})
 	}
 	if types.Has(logging.InputNameInfrastructure) {
@@ -86,8 +86,8 @@ func ContainerLogPaths() string {
 	return fmt.Sprintf("%q", "/var/log/pods/*/*/*.log")
 }
 
-func CollectorLogsPath(namespace string) string {
-	return fmt.Sprintf("/var/log/pods/%s_%%s-*/*/*.log", namespace)
+func CollectorLogsPath(namespace, name string) string {
+	return fmt.Sprintf("/var/log/pods/%s_%s-*/collector/*.log", namespace, name)
 }
 
 func LogFilesMetricExporterLogsPath(namespace string) string {
@@ -106,10 +106,10 @@ func VisualizationLogsPath(namespace string) string {
 	return fmt.Sprintf("/var/log/pods/%s_%%s-*/*/*.log", namespace)
 }
 
-func ExcludeContainerPaths(namespace string) string {
+func ExcludeContainerPaths(namespace, clfName string) string {
 	return fmt.Sprintf("[%s]", strings.Join(
 		[]string{
-			fmt.Sprintf("%q", fmt.Sprintf(CollectorLogsPath(namespace), constants.CollectorName)),
+			fmt.Sprintf("%q", CollectorLogsPath(namespace, clfName)),
 			fmt.Sprintf("%q", fmt.Sprintf(LogFilesMetricExporterLogsPath(namespace), constants.LogfilesmetricexporterName)),
 			fmt.Sprintf("%q", fmt.Sprintf(ElasticSearchLogStoreLogsPath(namespace), constants.ElasticsearchName)),
 			fmt.Sprintf("%q", fmt.Sprintf(LokiLogStoreLogsPath(namespace), constants.LokiName)),

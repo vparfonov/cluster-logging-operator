@@ -44,7 +44,7 @@ var _ = Describe("Testing Complete Config Generation", func() {
 			if testcase.Options == nil {
 				testcase.Options = generator.Options{generator.ClusterTLSProfileSpec: tls.GetClusterTLSProfileSpec(nil)}
 			}
-			e := generator.MergeSections(Conf(&testcase.CLSpec, testcase.Secrets, &testcase.CLFSpec, constants.OpenshiftNS, testcase.Options))
+			e := generator.MergeSections(Conf(&testcase.CLSpec, testcase.Secrets, &testcase.CLFSpec, constants.OpenshiftNS, constants.CollectorName, testcase.Options))
 			conf, err := g.GenerateConf(e...)
 			Expect(err).To(BeNil())
 			Expect(strings.TrimSpace(testcase.ExpectedConf)).To(matchers.EqualTrimLines(conf))
