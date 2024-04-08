@@ -135,7 +135,7 @@ type InputSpec struct {
 	Receiver *ReceiverSpec `json:"receiver,omitempty"`
 }
 
-// Output defines a destination for log messages.
+// OutputSpec defines a destination for log messages.
 type OutputSpec struct {
 	// Name used to refer to the output from a `pipeline`.
 	//
@@ -197,7 +197,7 @@ type OutputSpec struct {
 	//
 	// Username and Password
 	//
-	//   * `username`: Authentication user name. Requires `password`.
+	//   * `username`: Authentication username. Requires `password`.
 	//   * `password`: Authentication password. Requires `username`.
 	//
 	// Simple Authentication Security Layer (SASL)
@@ -288,7 +288,7 @@ type OutputSecretSpec struct {
 	Name string `json:"name"`
 }
 
-// Filter defines a filter for log messages.
+// FilterSpec defines a filter for log messages.
 // See [FilterTypeSpec] for a list of filter types.
 type FilterSpec struct {
 	// Name used to refer to the filter from a `pipeline`.
@@ -306,7 +306,7 @@ type FilterSpec struct {
 	FilterTypeSpec `json:",inline"`
 }
 
-// PipelinesSpec link a set of inputs to a set of outputs.
+// PipelineSpec link a set of inputs to a set of outputs.
 type PipelineSpec struct {
 	// OutputRefs lists the names (`output.name`) of outputs from this pipeline.
 	//

@@ -1,10 +1,11 @@
 package elasticsearch
 
 import (
+	"testing"
+
 	"github.com/openshift/cluster-logging-operator/internal/generator/framework"
 	vectorhelpers "github.com/openshift/cluster-logging-operator/internal/generator/vector/helpers"
 	"github.com/openshift/cluster-logging-operator/internal/generator/vector/output/common"
-	"testing"
 
 	"github.com/openshift/cluster-logging-operator/test/helpers"
 

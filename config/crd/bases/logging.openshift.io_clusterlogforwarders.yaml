@@ -53,7 +53,7 @@ spec:
                   modify log records in different ways. See [FilterTypeSpec] for a
                   list of filter types.
                 items:
-                  description: Filter defines a filter for log messages. See [FilterTypeSpec]
+                  description: FilterSpec defines a filter for log messages. See [FilterTypeSpec]
                     for a list of filter types.
                   properties:
                     drop:
@@ -566,7 +566,7 @@ spec:
                   default openshift log store. You can define outputs to forward to
                   other stores or log processors, inside or outside the cluster."
                 items:
-                  description: Output defines a destination for log messages.
+                  description: OutputSpec defines a destination for log messages.
                   properties:
                     azureMonitor:
                       properties:
@@ -781,7 +781,7 @@ spec:
                         * `passphrase`: Passphrase to decode an encoded TLS private
                         key. Requires tls.key. * `ca-bundle.crt`: Custom CA to validate
                         certificates. \n Username and Password \n * `username`: Authentication
-                        user name. Requires `password`. * `password`: Authentication
+                        username. Requires `password`. * `password`: Authentication
                         password. Requires `username`. \n Simple Authentication Security
                         Layer (SASL) \n * `sasl.enable`: (boolean) Explicitly enable
                         or disable SASL. If missing, SASL is automatically enabled
@@ -1077,7 +1077,7 @@ spec:
                 description: Pipelines forward the messages selected by a set of inputs
                   to a set of outputs.
                 items:
-                  description: PipelinesSpec link a set of inputs to a set of outputs.
+                  description: PipelineSpec link a set of inputs to a set of outputs.
                   properties:
                     detectMultilineErrors:
                       description: DetectMultilineErrors enables multiline error detection
