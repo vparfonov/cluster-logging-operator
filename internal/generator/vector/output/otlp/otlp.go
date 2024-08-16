@@ -122,6 +122,8 @@ func New(id string, o obs.OutputSpec, inputs []string, secrets observability.Sec
 			sink,
 			common.NewEncoding(id, common.CodecJSON),
 			common.NewAcknowledgments(id, strategy),
+			common.NewBatch(id, strategy),
+			common.NewBuffer(id, strategy),
 			tls.New(id, o.TLS, secrets, op),
 			auth.HTTPAuth(id, o.OTLP.Authentication, secrets, op),
 		},
