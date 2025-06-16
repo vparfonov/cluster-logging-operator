@@ -183,6 +183,11 @@ func (f *Factory) NewCollectorContainer(inputs internalobs.Inputs, outputs inter
 			ContainerPort: MetricsPort,
 			Protocol:      v1.ProtocolTCP,
 		},
+		{
+			Name:          "vector-tapper",
+			ContainerPort: 24123,
+			Protocol:      v1.ProtocolTCP,
+		},
 	}
 	collector.Env = []v1.EnvVar{
 		{Name: "COLLECTOR_CONF_HASH", Value: f.ConfigHash},
