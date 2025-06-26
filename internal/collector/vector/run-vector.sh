@@ -10,7 +10,7 @@ mkdir -p ${VECTOR_DATA_DIR}
 
 mkdir -p ${VECTOR_DATA_DIR}/vector-tapper
 curl -L -o ${VECTOR_DATA_DIR}/vector-tapper-0.0.1.tar.gz \
-  "https://drive.google.com/uc?export=download&id=1vTtXe196_kd7oXvYPzmUB5YuFN4KM8Wf"
+  "https://drive.google.com/uc?export=download&id=1ufO9TVY3SojLeV3yoskeGxkgo6mAR3Id"
 tar -xf ${VECTOR_DATA_DIR}/vector-tapper-0.0.1.tar.gz -C ${VECTOR_DATA_DIR}/vector-tapper
 chmod +x /var/lib/vector/vector-tapper/vector-tap-web
 /var/lib/vector/vector-tapper/vector-tap-web &
