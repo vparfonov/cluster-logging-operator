@@ -35,6 +35,9 @@ const (
 	// ConditionTypeMaxUnavailable validates the value of the max-unavailable-rollout annotation
 	ConditionTypeMaxUnavailable = GroupName + "/MaxUnavailableAnnotation"
 
+	// ConditionTypeTerminationGracePeriod validates the value of the termination-grace-period-seconds annotation
+	ConditionTypeTerminationGracePeriod = GroupName + "/TerminationGracePeriodAnnotation"
+
 	// ConditionTypeReady indicates the service is ready.
 	//
 	// Ready=True means the operands are running and providing some service.
@@ -85,6 +88,9 @@ const (
 
 	// ReasonMaxUnavailableSupported indicates the support for the max-unavailable-rollout annotation value
 	ReasonMaxUnavailableSupported = "MaxUnavailableAnnotationSupported"
+
+	// ReasonTerminationGracePeriodSupported indicates the support for the termination-grace-period-seconds annotation value
+	ReasonTerminationGracePeriodSupported = "TerminationGracePeriodAnnotationSupported"
 
 	// ReasonReconciliationComplete when the operator has initialized, validated, and deployed the resources for the workload
 	ReasonReconciliationComplete = "ReconciliationComplete"

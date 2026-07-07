@@ -42,6 +42,16 @@ func (outputs Outputs) ConfigmapNames() []string {
 	return names.UnsortedList()
 }
 
+// HasAtLeastOnceDelivery returns true if any output is configured with DeliveryMode AtLeastOnce
+func (outputs Outputs) HasAtLeastOnceDelivery() bool {
+	for _, o := range outputs {
+		if NewTuning(o).DeliveryMode == obsv1.DeliveryModeAtLeastOnce {
+			return true
+		}
+	}
+	return false
+}
+
 // NeedServiceAccountToken returns true if any output needs to be configured to use the token associated with the service account
 func (outputs Outputs) NeedServiceAccountToken() bool {
 	var auths []*obsv1.BearerToken

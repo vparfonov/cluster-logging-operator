@@ -1,0 +1,77 @@
+== Vector Collector: Configuring Termination Grace Period
+
+This feature enables configuring the `terminationGracePeriodSeconds` for collector pods through an annotation on the `ClusterLogForwarder`. This controls how long Kubernetes waits after sending SIGTERM before force-killing the collector with SIGKILL.
+
+Annotation: `observability.openshift.io/termination-grace-period-seconds`.
+
+=== Default Behavior
+
+The operator applies the following defaults:
+
+* If any output is configured with `tuning.deliveryMode: AtLeastOnce`, the grace period defaults to *60 seconds*. This allows Vector sufficient time to flush its disk buffer and close connections to remote sinks.
+* Otherwise, the grace period defaults to *10 seconds*.
+
+The annotation overrides both defaults when set.
+
+=== Background
+
+When `deliveryMode: AtLeastOnce` is configured, Vector uses a disk buffer to persist log data across restarts. During shutdown, Vector must flush in-memory events to the disk buffer and gracefully close connections to remote sinks. If the grace period is too short, Kubernetes sends SIGKILL while a write is in progress, which can corrupt the on-disk buffer. A corrupted buffer causes the collector pod to enter a `CrashLoopBackOff` with an `InvalidProtobufPayload` error on the next startup.footnote:[https://issues.redhat.com/browse/LOG-9636[LOG-9636]]
+
+=== Example
+
+.Override termination grace period to 120 seconds
+[source,yaml]
+----
+apiVersion: observability.openshift.io/v1
+kind: ClusterLogForwarder
+metadata:
+  name: my-forwarder
+  namespace: openshift-logging
+  annotations:
+    observability.openshift.io/termination-grace-period-seconds: "120"
+spec:
+  serviceAccount:
+    name: my-service-account
+  outputs:
+  - name: my-splunk
+    type: splunk
+    splunk:
+      url: https://splunk-hec.example.com:8088
+      authentication:
+        token:
+          key: hecToken
+          secretName: splunk-secret
+      tuning:
+        deliveryMode: AtLeastOnce
+  pipelines:
+  - name: audit-logs
+    inputRefs:
+    - audit
+    outputRefs:
+    - my-splunk
+----
+
+This configuration sets the collector's termination grace period to 120 seconds, providing ample time for Vector to flush its disk buffer during shutdown.
+
+=== Verifying
+
+You can verify the termination grace period on the collector pods:
+
+.Check DaemonSet pod spec
+[source,bash]
+----
+  oc get ds <my-forwarder-name> -ojsonpath='{.spec.template.spec.terminationGracePeriodSeconds}'
+----
+
+=== Other Commands
+
+* You can add the annotation using `oc patch`:
++
+.example command
+[source,bash]
+----
+  oc patch obsclf <my-forwarder-name> --type='merge' -p '{"metadata":{"annotations":{"observability.openshift.io/termination-grace-period-seconds":"120"}}}'
+----
+
+=== References
+* https://issues.redhat.com/browse/LOG-9636[LOG-9636]: terminationGracePeriodSeconds hardcoded to 10s causes SIGKILL and disk buffer corruption

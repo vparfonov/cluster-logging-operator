@@ -2,6 +2,7 @@ package collector
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	log "github.com/ViaQ/logerr/v2/log/static"
@@ -62,6 +63,7 @@ type Factory struct {
 	Secrets                internalobs.Secrets
 	ConfigMaps             map[string]*v1.ConfigMap
 	ForwarderSpec          obs.ClusterLogForwarderSpec
+	Annotations            map[string]string
 	CommonLabelInitializer CommonLabelVisitor
 	PodLabelVisitor        PodLabelVisitor
 	ResourceNames          *factory.ForwarderResourceNames
@@ -87,7 +89,7 @@ func (f *Factory) Tolerations() []v1.Toleration {
 	return f.CollectorSpec.Tolerations
 }
 
-func New(confHash, clusterID string, collectorSpec *obs.CollectorSpec, secrets internalobs.Secrets, configMaps map[string]*v1.ConfigMap, forwarderSpec obs.ClusterLogForwarderSpec, resNames *factory.ForwarderResourceNames, isDaemonset bool, logLevel string, maxUnavailable string) *Factory {
+func New(confHash, clusterID string, collectorSpec *obs.CollectorSpec, secrets internalobs.Secrets, configMaps map[string]*v1.ConfigMap, forwarderSpec obs.ClusterLogForwarderSpec, resNames *factory.ForwarderResourceNames, isDaemonset bool, logLevel string, maxUnavailable string, annotations map[string]string) *Factory {
 	if collectorSpec == nil {
 		collectorSpec = &obs.CollectorSpec{}
 	}
@@ -100,6 +102,7 @@ func New(confHash, clusterID string, collectorSpec *obs.CollectorSpec, secrets i
 		ConfigMaps:    configMaps,
 		Secrets:       secrets,
 		ForwarderSpec: forwarderSpec,
+		Annotations:   annotations,
 		CommonLabelInitializer: func(o runtime.Object) {
 			runtime.SetCommonLabels(o, constants.VectorName, resNames.ForwarderName, constants.CollectorName)
 		},
@@ -126,13 +129,26 @@ func (f *Factory) NewDeployment(namespace, name string, trustedCABundle *v1.Conf
 	return dpl
 }
 
+func (f *Factory) terminationGracePeriodSeconds() *int64 {
+	if value, ok := f.Annotations[constants.AnnotationTerminationGracePeriodSeconds]; ok {
+		if seconds, err := strconv.ParseInt(value, 10, 64); err == nil && seconds > 0 {
+			return utils.GetPtr(seconds)
+		}
+		log.V(0).Info("Invalid termination-grace-period-seconds annotation value, using default", "value", value)
+	}
+	if internalobs.Outputs(f.ForwarderSpec.Outputs).HasAtLeastOnceDelivery() {
+		return utils.GetPtr[int64](60)
+	}
+	return utils.GetPtr[int64](10)
+}
+
 func (f *Factory) NewPodSpec(trustedCABundle *v1.ConfigMap, spec obs.ClusterLogForwarderSpec, clusterID string, tlsProfileSpec configv1.TLSProfileSpec, namespace string) *v1.PodSpec {
 
 	podSpec := &v1.PodSpec{
 		NodeSelector:                  utils.EnsureLinuxNodeSelector(f.NodeSelector()),
 		PriorityClassName:             clusterLoggingPriorityClassName,
 		ServiceAccountName:            f.ResourceNames.ServiceAccount,
-		TerminationGracePeriodSeconds: utils.GetPtr[int64](10),
+		TerminationGracePeriodSeconds: f.terminationGracePeriodSeconds(),
 		Tolerations:                   append(constants.DefaultTolerations(), f.Tolerations()...),
 		Volumes: []v1.Volume{
 			{Name: metricsVolumeName, VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{SecretName: f.ResourceNames.SecretMetrics}}},

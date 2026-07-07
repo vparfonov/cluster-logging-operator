@@ -21,4 +21,9 @@ const (
 	// AnnotationMaxUnavailable (Deprecated) configures the maximum number of DaemonSet pods that can be unavailable during a rolling update.
 	// This can be an absolute number (e.g., 1) or a percentage (e.g., 10%). Default is 100%.
 	AnnotationMaxUnavailable = "observability.openshift.io/max-unavailable-rollout"
+
+	// AnnotationTerminationGracePeriodSeconds overrides the terminationGracePeriodSeconds for collector pods.
+	// The value must be a positive integer representing seconds.
+	// When not set and deliveryMode is AtLeastOnce, defaults to 60; otherwise defaults to 10.
+	AnnotationTerminationGracePeriodSeconds = "observability.openshift.io/termination-grace-period-seconds"
 )

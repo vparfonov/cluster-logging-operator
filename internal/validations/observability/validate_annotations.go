@@ -3,6 +3,7 @@ package observability
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 
 	obs "github.com/openshift/cluster-logging-operator/api/observability/v1"
@@ -41,6 +42,19 @@ func validateMaxUnavailableAnnotation(context internalcontext.ForwarderContext) 
 
 func IsEnabledValue(val string) bool {
 	return enabledValues.Has(strings.ToLower(val))
+}
+
+func validateTerminationGracePeriodAnnotation(context internalcontext.ForwarderContext) {
+	if value, ok := context.Forwarder.Annotations[constants.AnnotationTerminationGracePeriodSeconds]; ok {
+		seconds, err := strconv.ParseInt(value, 10, 64)
+		if err != nil || seconds <= 0 {
+			condition := internalobs.NewCondition(obs.ConditionTypeTerminationGracePeriod, obs.ConditionFalse, obs.ReasonTerminationGracePeriodSupported, "")
+			condition.Message = fmt.Sprintf("termination-grace-period-seconds value %q must be a positive integer", value)
+			internalobs.SetCondition(&context.Forwarder.Status.Conditions, condition)
+			return
+		}
+	}
+	internalobs.RemoveConditionByType(&context.Forwarder.Status.Conditions, obs.ConditionTypeTerminationGracePeriod)
 }
 
 func validateLogLevelAnnotation(context internalcontext.ForwarderContext) {

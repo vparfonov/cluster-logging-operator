@@ -134,6 +134,71 @@ var _ = Describe("Factory#Daemonset", func() {
 
 		Describe("when creating the podSpec", func() {
 
+			Context("and evaluating terminationGracePeriodSeconds", func() {
+				It("should default to 10 when no annotation and no AtLeastOnce delivery", func() {
+					Expect(*podSpec.TerminationGracePeriodSeconds).To(Equal(int64(10)))
+				})
+
+				It("should be 60 when any output has AtLeastOnce delivery mode", func() {
+					factory.ForwarderSpec = obs.ClusterLogForwarderSpec{
+						Outputs: []obs.OutputSpec{
+							{
+								Name: "my-splunk",
+								Type: obs.OutputTypeSplunk,
+								Splunk: &obs.Splunk{
+									Tuning: &obs.SplunkTuningSpec{
+										BaseOutputTuningSpec: obs.BaseOutputTuningSpec{
+											DeliveryMode: obs.DeliveryModeAtLeastOnce,
+										},
+									},
+								},
+							},
+						},
+					}
+					podSpec = *factory.NewPodSpec(nil, factory.ForwarderSpec, "1234", tls.GetClusterTLSProfileSpec(nil), constants.OpenshiftNS)
+					Expect(*podSpec.TerminationGracePeriodSeconds).To(Equal(int64(60)))
+				})
+
+				It("should use annotation value when set", func() {
+					factory.Annotations = map[string]string{
+						constants.AnnotationTerminationGracePeriodSeconds: "120",
+					}
+					podSpec = *factory.NewPodSpec(nil, obs.ClusterLogForwarderSpec{}, "1234", tls.GetClusterTLSProfileSpec(nil), constants.OpenshiftNS)
+					Expect(*podSpec.TerminationGracePeriodSeconds).To(Equal(int64(120)))
+				})
+
+				It("should let annotation override AtLeastOnce default", func() {
+					factory.Annotations = map[string]string{
+						constants.AnnotationTerminationGracePeriodSeconds: "300",
+					}
+					factory.ForwarderSpec = obs.ClusterLogForwarderSpec{
+						Outputs: []obs.OutputSpec{
+							{
+								Name: "my-splunk",
+								Type: obs.OutputTypeSplunk,
+								Splunk: &obs.Splunk{
+									Tuning: &obs.SplunkTuningSpec{
+										BaseOutputTuningSpec: obs.BaseOutputTuningSpec{
+											DeliveryMode: obs.DeliveryModeAtLeastOnce,
+										},
+									},
+								},
+							},
+						},
+					}
+					podSpec = *factory.NewPodSpec(nil, factory.ForwarderSpec, "1234", tls.GetClusterTLSProfileSpec(nil), constants.OpenshiftNS)
+					Expect(*podSpec.TerminationGracePeriodSeconds).To(Equal(int64(300)))
+				})
+
+				It("should fall back to default logic when annotation value is invalid", func() {
+					factory.Annotations = map[string]string{
+						constants.AnnotationTerminationGracePeriodSeconds: "notanumber",
+					}
+					podSpec = *factory.NewPodSpec(nil, obs.ClusterLogForwarderSpec{}, "1234", tls.GetClusterTLSProfileSpec(nil), constants.OpenshiftNS)
+					Expect(*podSpec.TerminationGracePeriodSeconds).To(Equal(int64(10)))
+				})
+			})
+
 			Context("and evaluating tolerations", func() {
 				It("should add only defaults when none are defined", func() {
 					Expect(podSpec.Tolerations).To(Equal(constants.DefaultTolerations()))

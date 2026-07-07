@@ -11,6 +11,54 @@ import (
 
 var _ = Describe("helpers for output types", func() {
 
+	Context("#HasAtLeastOnceDelivery", func() {
+		It("should return false when no outputs have AtLeastOnce delivery", func() {
+			outputs := Outputs{
+				{Name: "out1", Type: obsv1.OutputTypeSplunk, Splunk: &obsv1.Splunk{}},
+			}
+			Expect(outputs.HasAtLeastOnceDelivery()).To(BeFalse())
+		})
+
+		It("should return true when an output has AtLeastOnce delivery", func() {
+			outputs := Outputs{
+				{
+					Name: "out1",
+					Type: obsv1.OutputTypeSplunk,
+					Splunk: &obsv1.Splunk{
+						Tuning: &obsv1.SplunkTuningSpec{
+							BaseOutputTuningSpec: obsv1.BaseOutputTuningSpec{
+								DeliveryMode: obsv1.DeliveryModeAtLeastOnce,
+							},
+						},
+					},
+				},
+			}
+			Expect(outputs.HasAtLeastOnceDelivery()).To(BeTrue())
+		})
+
+		It("should return false when outputs have AtMostOnce delivery", func() {
+			outputs := Outputs{
+				{
+					Name: "out1",
+					Type: obsv1.OutputTypeSplunk,
+					Splunk: &obsv1.Splunk{
+						Tuning: &obsv1.SplunkTuningSpec{
+							BaseOutputTuningSpec: obsv1.BaseOutputTuningSpec{
+								DeliveryMode: obsv1.DeliveryModeAtMostOnce,
+							},
+						},
+					},
+				},
+			}
+			Expect(outputs.HasAtLeastOnceDelivery()).To(BeFalse())
+		})
+
+		It("should return false for empty outputs", func() {
+			outputs := Outputs{}
+			Expect(outputs.HasAtLeastOnceDelivery()).To(BeFalse())
+		})
+	})
+
 	Context("#SecretReferences", func() {
 
 		It("should return an empty set of keys when authentication is not defined for an output", func() {

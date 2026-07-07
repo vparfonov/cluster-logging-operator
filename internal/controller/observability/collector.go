@@ -102,6 +102,7 @@ func ReconcileCollector(context internalcontext.ForwarderContext, pollInterval, 
 		isDaemonSet,
 		LogLevel(context.Forwarder.Annotations),
 		factory.GetMaxUnavailableValue(options),
+		context.Forwarder.Annotations,
 	)
 
 	if err = collectorFactory.ReconcileCollectorConfig(context.Client, context.Reader, context.Forwarder.Namespace, collectorConfig, ownerRef); err != nil {
