@@ -79,7 +79,7 @@ var _ = Describe("Reconcile LogFileMetricExporter Daemonset", func() {
 
 		// The exporter binary is invoked directly (not via a shell) with each flag as a separate arg.
 		Expect(container.Command).To(Equal([]string{"/usr/local/bin/log-file-metric-exporter"}))
-		Expect(container.Args).To(HaveLen(9))
+		Expect(container.Args).To(HaveLen(10))
 		Expect(container.Args).To(ContainElements(
 			"-verbosity=2",
 			"-dir=/var/log/pods",
@@ -87,6 +87,7 @@ var _ = Describe("Reconcile LogFileMetricExporter Daemonset", func() {
 			"-keyFile=/etc/logfilemetricexporter/metrics/tls.key",
 			"-crtFile=/etc/logfilemetricexporter/metrics/tls.crt",
 			"-secureMetrics",
+			"-authCacheTTL=10s",
 		))
 		Expect(container.Args).To(ContainElement(HavePrefix("-tlsMinVersion=")))
 		Expect(container.Args).To(ContainElement(HavePrefix("-cipherSuites=")))

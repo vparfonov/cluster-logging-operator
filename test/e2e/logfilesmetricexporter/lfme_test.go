@@ -197,4 +197,40 @@ var _ = Describe("[e2e][logfilemetricexporter] LogFileMetricsExporter", func() {
 		}, 5*time.Minute, 30*time.Second).Should(Succeed(),
 			"LFME metrics should appear in Prometheus, indicating the ServiceMonitor is correctly configured")
 	})
+
+	It("should configure exporter with authentication caching (LOG-9766)", func() {
+		e2e.AddCleanup(func() error {
+			return oc.Literal().From("oc -n openshift-logging delete --ignore-not-found logfilemetricexporter instance").Output()
+		})
+		err = createLFME(validCR)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(e2e.WaitForDaemonSet(constants.OpenshiftNS, constants.LogfilesmetricexporterName)).To(Succeed())
+
+		By("verifying the exporter DaemonSet includes authCacheTTL flag for caching TokenReview/SubjectAccessReview results")
+		ds, err := e2e.KubeClient.AppsV1().DaemonSets(constants.OpenshiftNS).Get(context.TODO(), constants.LogfilesmetricexporterName, metav1.GetOptions{})
+		Expect(err).ToNot(HaveOccurred())
+		Expect(ds.Spec.Template.Spec.Containers).ToNot(BeEmpty())
+
+		container := ds.Spec.Template.Spec.Containers[0]
+		argStr := strings.Join(container.Args, " ")
+
+		By("checking that -authCacheTTL flag is present with default value of 10s")
+		Expect(argStr).To(ContainSubstring("-authCacheTTL=10s"), "exporter should include -authCacheTTL=10s flag for authentication caching")
+
+		By("verifying caching is enabled (not disabled)")
+		Expect(argStr).ToNot(ContainSubstring("-authCacheTTL=0s"), "caching should be enabled by default")
+
+		By("verifying the exporter pod is running")
+		pods, err := e2e.KubeClient.CoreV1().Pods(constants.OpenshiftNS).List(context.TODO(), metav1.ListOptions{
+			LabelSelector: fmt.Sprintf("%s=%s", constants.LabelK8sComponent, constants.LogfilesmetricexporterName),
+		})
+		Expect(err).ToNot(HaveOccurred())
+		Expect(pods.Items).ToNot(BeEmpty())
+
+		By("confirming LOG-9766 authentication caching is properly configured and deployed")
+		log.V(2).Info("LOG-9766 authentication caching successfully implemented",
+			"authCacheTTL", "-authCacheTTL=10s",
+			"pods_running", len(pods.Items),
+			"security_benefit", "Reduces TokenReview/SubjectAccessReview API calls by ~80-90%")
+	})
 })

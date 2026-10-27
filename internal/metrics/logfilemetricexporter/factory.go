@@ -114,7 +114,7 @@ func NewPodSpec(exporter loggingv1a1.LogFileMetricExporter, tlsProfileSpec confi
 func newLogMetricsExporterContainer(exporter loggingv1a1.LogFileMetricExporter, tlsProfileSpec configv1.TLSProfileSpec) *v1.Container {
 	exporterContainer := runtime.NewContainer(constants.LogfilesmetricexporterName,
 		utils.GetComponentImage(constants.LogfilesmetricexporterName),
-		v1.PullIfNotPresent, resourceRequirements(exporter))
+		v1.PullAlways, resourceRequirements(exporter))
 
 	exporterContainer.Ports = []v1.ContainerPort{
 		{
@@ -131,6 +131,7 @@ func newLogMetricsExporterContainer(exporter loggingv1a1.LogFileMetricExporter, 
 		"-keyFile=/etc/logfilemetricexporter/metrics/tls.key",
 		"-crtFile=/etc/logfilemetricexporter/metrics/tls.crt",
 		"-secureMetrics",
+		"-authCacheTTL=10s",
 		"-tlsMinVersion=" + tls.MinTLSVersion(tlsProfileSpec),
 		"-cipherSuites=" + strings.Join(tls.TLSCiphers(tlsProfileSpec), ","),
 		"-groups=" + strings.Join(tls.TLSGroups(tlsProfileSpec), ","),
